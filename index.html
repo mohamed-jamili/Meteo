@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Application Météo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(to right, #2c3e50, #4ca1af);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 500px;
+      width: 90%;
+      margin: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 30px 20px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      margin-bottom: 25px;
+      font-weight: 600;
+    }
+    input {
+      width: 80%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+      margin-bottom: 10px;
+      font-family: 'Poppins', sans-serif;
+    }
+    button {
+      margin-top: 10px;
+      padding: 12px 25px;
+      border: none;
+      background: #ff7675;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #e84118;
+    }
+    .weather-info {
+      margin-top: 25px;
+      font-size: 18px;
+    }
+    .weather-info h2 {
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+    .weather-info img {
+      width: 100px;
+      height: 100px;
+      margin: 10px 0;
+    }
+    .weather-info p {
+      margin: 8px 0;
+      font-weight: 300;
+    }
+    .error {
+      color: #ff6b6b;
+      font-weight: 500;
+    }
+    .success {
+      color: #51cf66;
+    }
+    
+    /* Animation pour le chargement */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .weather-info > * {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌤️ Application Météo</h1>
+    <input type="text" id="city" placeholder="Entrez le nom de la ville..." />
+    <button onclick="getWeather()">Rechercher</button>
+    <div class="weather-info" id="weather"></div>
+  </div>
+
+  <script>
+    const API_KEY = "83d6f2ccb77f6a1da24346364cd643ba";
+
+    async function getWeather() {
+      const city = document.getElementById("city").value.trim();
+      const weatherDiv = document.getElementById("weather");
+
+      if (!city) {
+        weatherDiv.innerHTML = '<p class="error">⚠️ Veuillez entrer une ville.</p>';
+        return;
+      }
+
+      // Afficher un indicateur de chargement
+      weatherDiv.innerHTML = '<p>🔍 Recherche en cours...</p>';
+
+      try {
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+          city
+        )}&appid=${API_KEY}&units=metric&lang=fr`;
+        
+        const res = await fetch(url);
+        
+        if (!res.ok) {
+          throw new Error(`Erreur HTTP: ${res.status}`);
+        }
+        
+        const data = await res.json();
+
+        // Vérifier si l'API retourne une erreur
+        if (data.cod !== 200) {
+          throw new Error(
+            data.message || "Ville introuvable, essayez d'ajouter le pays (ex: Casablanca,MA)"
+          );
+        }
+
+        const { name } = data;
+        const { country } = data.sys;
+        const { temp, humidity } = data.main;
+        const description = data.weather[0].description;
+        const icon = data.weather[0].icon;
+
+        weatherDiv.innerHTML = `
+          <h2>${name}, ${country}</h2>
+          <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${description}">
+          <p>🌡️ Température: ${Math.round(temp)}°C</p>
+          <p>💧 Humidité: ${humidity}%</p>
+          <p>🌥️ Ciel: ${description.charAt(0).toUpperCase() + description.slice(1)}</p>
+          <p class="success">✅ Données mises à jour</p>
+        `;
+      } catch (error) {
+        console.error('Erreur détaillée:', error);
+        weatherDiv.innerHTML = `<p class="error">❌ Erreur: ${error.message}</p>`;
+      }
+    }
+
+    // Permettre la recherche avec la touche Entrée
+    document.getElementById('city').addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        getWeather();
+      }
+    });
+
+    // Charger la météo d'une ville par défaut au chargement
+    window.addEventListener('load', function() {
+      document.getElementById('city').value = 'Casablanca';
+      getWeather();
+    });
+  </script>
+</body>
+</html>
